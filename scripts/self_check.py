@@ -43,6 +43,10 @@ class MuseumSkillChecks(unittest.TestCase):
             file.write_text('EVENTS,FrameTime,GPUTime,GameThreadTime,GPUMem/LocalUsedMB\n,16,5,2,100\n,100,6,90,101\n[Metadata],ignored,,,\n',encoding='utf-8')
             report=summarize(file)
             self.assertEqual(report['frames_above_50ms'],1)
+            self.assertEqual(report['captured_frames'],2)
+            self.assertEqual(report['frames_above_16_667ms'],1)
+            self.assertAlmostEqual(report['average_fps'],1000/58)
+            self.assertEqual(report['counters']['FrameTime']['p95'],100)
             self.assertEqual(report['counters']['FrameTime']['max'],100)
             self.assertEqual(report['counters']['GPUTime']['mean'],5.5)
 

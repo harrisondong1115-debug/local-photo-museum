@@ -6,6 +6,7 @@
 #include "Styling/SlateBrush.h"
 #include "MuseumRuntime.generated.h"
 
+class UPrimitiveComponent;
 class UCameraComponent;
 class UTexture2D;
 class SWidget;
@@ -60,6 +61,12 @@ private:
     double LastFrameLog = 0;
     TArray<float> FrameTimes;
     bool bMuseumQA = false, bQAInitialised = false, bQARayPick = false;
+    bool bQAAtriumPick=false, bQAPerf=false, bQAFullDecoded=false;
+    bool bQAOutdoorPick=false;
+    bool bQALeftWallPick=false, bQARightWallPick=false;
+    bool bQALeftWallDecoded=false, bQARightWallDecoded=false, bQAOutdoorDecoded=false;
+    bool bQALeftWallOccludes=false, bQARightWallOccludes=false;
+    bool bQARearPick=false, bQACourtyardBackPick=false, bQARearDecoded=false, bQACourtyardBackDecoded=false;
     float QATime = 0;
     int32 QAStep = 0;
     FRotator QARotation;
@@ -81,6 +88,7 @@ private:
     void NextPhoto();
     void GoEntry();
     void GoGarden();
+    void GoAtrium();
     void FastStart();
     void FastEnd();
     void ToggleQuality();
@@ -92,6 +100,6 @@ private:
     void RequestPhoto();
     void ApplyPhoto(int32 Generation, int32 Width, int32 Height, TArray64<uint8>&& Pixels);
     void RemoveGalleryWidget();
-    bool OpenExhibit(AActor* Actor);
+    bool OpenExhibit(AActor* Actor, UPrimitiveComponent* Component=nullptr);
     void RunMuseumQA(float DeltaTime);
 };

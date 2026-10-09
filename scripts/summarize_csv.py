@@ -15,8 +15,12 @@ def summarize(path):
         if not values:
             result['counters'][name]=None;continue
         values.sort()
-        result['counters'][name]={'samples':len(values),'mean':statistics.mean(values),'p99':values[math.ceil(len(values)*.99)-1],'max':values[-1]}
-        if name=='FrameTime': result['frames_above_50ms']=sum(v>50 for v in values)
+        result['counters'][name]={'samples':len(values),'mean':statistics.mean(values),'p95':values[math.ceil(len(values)*.95)-1],'p99':values[math.ceil(len(values)*.99)-1],'max':values[-1]}
+        if name=='FrameTime':
+            result['average_fps']=1000/statistics.mean(values)
+            result['captured_frames']=len(values)
+            result['frames_above_16_667ms']=sum(v>1000/60 for v in values)
+            result['frames_above_50ms']=sum(v>50 for v in values)
     if result['counters']['FrameTime'] is None: raise ValueError('No actual FrameTime counter found')
     return result
 def main():

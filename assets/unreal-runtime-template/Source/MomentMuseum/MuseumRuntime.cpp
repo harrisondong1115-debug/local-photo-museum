@@ -1,4 +1,5 @@
 #include "MuseumRuntime.h"
+#include "Components/StaticMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -68,6 +69,17 @@ void AMuseumController::BeginPlay()
     Super::BeginPlay();
     CollectionRoot = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Collections"));
     LoadCatalogue();
+    ConsoleCommand(TEXT("r.ScreenPercentage 75"),false);
+    ConsoleCommand(TEXT("sg.AntiAliasingQuality 2"),false);
+    ConsoleCommand(TEXT("r.TSR.History.ScreenPercentage 100"),false);
+    ConsoleCommand(TEXT("r.Lumen.ScreenProbeGather.DownsampleFactor 32"),false);
+    ConsoleCommand(TEXT("r.Lumen.Reflections.DownsampleFactor 2"),false);
+    ConsoleCommand(TEXT("r.Shadow.Virtual.SMRT.RayCountDirectional 4"),false);
+    ConsoleCommand(TEXT("sg.GlobalIlluminationQuality 2"),false);
+    ConsoleCommand(TEXT("sg.ReflectionQuality 2"),false);
+    ConsoleCommand(TEXT("t.MaxFPS 75"),false);
+    bQAPerf=FParse::Param(FCommandLine::Get(),TEXT("MuseumQAPerf"));
+    if(FParse::Param(FCommandLine::Get(),TEXT("MuseumQABalanced"))) ToggleQuality();
     bMuseumQA=FParse::Param(FCommandLine::Get(),TEXT("MuseumQA"));
     if(bMuseumQA)
     {
@@ -77,7 +89,7 @@ void AMuseumController::BeginPlay()
         {
             QADirectory+=TEXT("Quality");
             IFileManager::Get().MakeDirectory(*QADirectory,true);
-            ToggleQuality();
+            if(!bHighQuality) ToggleQuality();
         }
     }
     PhotoBrush = MakeShared<FSlateBrush>();
@@ -127,7 +139,7 @@ void AMuseumController::BeginPlay()
                   if(Size.X>0 && Size.Y>0 && Weak->DeprojectScreenPositionToWorld(Local.X*Pixels.X/Size.X,Local.Y*Pixels.Y/Size.Y,Origin,Direction))
                   {
                       FHitResult Hit;
-                      if(Weak->GetWorld()->LineTraceSingleByChannel(Hit,Origin,Origin+Direction*100000,ECC_Visibility,FCollisionQueryParams(TEXT("PointerPick"),true,Weak->GetPawn()))) Weak->OpenExhibit(Hit.GetActor());
+                      if(Weak->GetWorld()->LineTraceSingleByChannel(Hit,Origin,Origin+Direction*100000,ECC_Visibility,FCollisionQueryParams(TEXT("PointerPick"),true,Weak->GetPawn()))) Weak->OpenExhibit(Hit.GetActor(),Hit.GetComponent());
                   }
               }
               return FReply::Handled().ReleaseMouseCapture();
@@ -137,7 +149,7 @@ void AMuseumController::BeginPlay()
         + SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Bottom).Padding(12)
         [ SNew(SBorder).Padding(12).BorderBackgroundColor(FLinearColor(0.02f,0.03f,0.04f,0.72f))
           [ SNew(STextBlock).ColorAndOpacity(FLinearColor(0.85f,0.88f,0.90f))
-            .Text(FText::FromString(TEXT("WASD 移动 · 拖动转头 · 点照片打开合集 · Tab 全部合集 · O 庭院 · Home 入口 · F8 画质 · F9 帧率"))) ] ];
+            .Text(FText::FromString(TEXT("WASD 移动 · 拖动转头 · 点照片打开合集 · Tab 全部合集 · O 庭院 · M 中庭 · Home 入口 · F8 画质 · F9 帧率"))) ] ];
         GEngine->GameViewport->AddViewportWidgetContent(HintWidget.ToSharedRef(), 1);
     }
     UE_LOG(LogMomentMuseum, Display, TEXT("Museum ready. Local albums=%d, HWRT Lumen + TSR, no path tracer."), Albums.Num());
@@ -154,6 +166,7 @@ void AMuseumController::SetupInputComponent()
     InputComponent->BindAction(TEXT("Next"),IE_Pressed,this,&AMuseumController::NextPhoto);
     InputComponent->BindAction(TEXT("Entry"),IE_Pressed,this,&AMuseumController::GoEntry);
     InputComponent->BindAction(TEXT("Garden"),IE_Pressed,this,&AMuseumController::GoGarden);
+    InputComponent->BindAction(TEXT("Atrium"),IE_Pressed,this,&AMuseumController::GoAtrium);
     InputComponent->BindAction(TEXT("Fast"),IE_Pressed,this,&AMuseumController::FastStart);
     InputComponent->BindAction(TEXT("Fast"),IE_Released,this,&AMuseumController::FastEnd);
     InputComponent->BindAction(TEXT("Quality"),IE_Pressed,this,&AMuseumController::ToggleQuality);
@@ -254,14 +267,16 @@ void AMuseumController::DragEnd()
     FHitResult Hit;
     if(GetHitResultUnderCursor(ECC_Visibility,true,Hit) && Hit.GetActor())
     {
-        OpenExhibit(Hit.GetActor());
+        OpenExhibit(Hit.GetActor(),Hit.GetComponent());
     }
 }
-bool AMuseumController::OpenExhibit(AActor* Actor)
+bool AMuseumController::OpenExhibit(AActor* Actor,UPrimitiveComponent* Component)
 {
     if(!Actor) return false;
         FString AlbumId,PhotoId;
-        for(FName Tag:Actor->Tags)
+        TArray<FName> ExhibitTags=Actor->Tags;
+        if(Component) ExhibitTags.Append(Component->ComponentTags);
+        for(FName Tag:ExhibitTags)
         {
             FString Value=Tag.ToString();
             if(Value.StartsWith(TEXT("Album="))) AlbumId=Value.Mid(6);
@@ -455,6 +470,7 @@ void AMuseumController::ApplyPhoto(int32 Generation,int32 Width,int32 Height,TAr
     FMemory::Memcpy(Data,Pixels.GetData(),Pixels.Num());
     Mip.BulkData.Unlock(); Texture->UpdateResource();
     CurrentPhoto=Texture;
+    bQAFullDecoded=true;
     PhotoBrush->SetResourceObject(Texture);
     PhotoBrush->ImageSize=FVector2D(Width,Height);
     RebuildGallery();
@@ -468,16 +484,17 @@ void AMuseumController::TeleportToTag(FName Tag)
         if(It->ActorHasTag(Tag) && GetPawn())
         {
             if(auto* MuseumPawn=Cast<AMuseumCharacter>(GetPawn())) MuseumPawn->GetCharacterMovement()->StopMovementImmediately();
-            GetPawn()->TeleportTo(It->GetActorLocation(),It->GetActorRotation());
+            GetPawn()->TeleportTo(It->GetActorLocation(),FRotator(0,It->GetActorRotation().Yaw,0));
             SetControlRotation(It->GetActorRotation()); return;
         }
 }
 void AMuseumController::GoEntry(){ TeleportToTag(TEXT("MuseumEntry")); }
 void AMuseumController::GoGarden(){ TeleportToTag(TEXT("MuseumGarden")); }
+void AMuseumController::GoAtrium(){ TeleportToTag(TEXT("MuseumAtriumView")); }
 void AMuseumController::ToggleQuality()
 {
     bHighQuality=!bHighQuality;
-    ConsoleCommand(bHighQuality?TEXT("r.ScreenPercentage 83.333"):TEXT("r.ScreenPercentage 66.667"),false);
+    ConsoleCommand(bHighQuality?TEXT("r.ScreenPercentage 100"):TEXT("r.ScreenPercentage 75"),false);
     ConsoleCommand(bHighQuality?TEXT("sg.GlobalIlluminationQuality 3"):TEXT("sg.GlobalIlluminationQuality 2"),false);
     ConsoleCommand(bHighQuality?TEXT("sg.ReflectionQuality 3"):TEXT("sg.ReflectionQuality 2"),false);
     if(GEngine) GEngine->AddOnScreenDebugMessage(-1,3,FColor::White,bHighQuality?TEXT("画质优先"):TEXT("流畅优先"));
@@ -519,14 +536,14 @@ void AMuseumController::RunMuseumQA(float DeltaTime)
         int32 Actors=0,Exhibits=0;
         for(TActorIterator<AActor> It(GetWorld());It;++It){ ++Actors; if(It->ActorHasTag(TEXT("MuseumExhibit"))) ++Exhibits; }
         UE_LOG(LogMomentMuseum,Display,TEXT("QA %s pawn=%s camera=%s actors=%d exhibits=%d ground=%s hit=%s"),Name,*GetPawn()->GetActorLocation().ToString(),*CameraLocation.ToString(),Actors,Exhibits,*GetNameSafe(Ground.GetActor()),*Ground.Location.ToString());
-        FScreenshotRequest::RequestScreenshot(FPaths::Combine(QADirectory,Name),true,false);
+        if(!bQAPerf) FScreenshotRequest::RequestScreenshot(FPaths::Combine(QADirectory,Name),true,false);
     };
     if(QAStep==0 && QATime>=4){ Shot(TEXT("RTX_Stationary.png")); ConsoleCommand(TEXT("csvprofile start"),false); ++QAStep; }
     if(QAStep==1 && QATime>=9){ Shot(TEXT("RTX_Moving_A.png")); ++QAStep; }
     if(QAStep==2 && QATime>=18){ Shot(TEXT("RTX_Moving_B.png")); ++QAStep; }
-    if(QAStep==3 && QATime>=24){ ConsoleCommand(TEXT("csvprofile stop"),false); GoGarden(); ++QAStep; }
+    if(QAStep==3 && QATime>=24){ GoGarden(); ++QAStep; }
     if(QAStep==4 && QATime>=29){ Shot(TEXT("Winter_Garden.png")); ++QAStep; }
-    if(QAStep==5 && QATime>=30){ GoEntry(); ++QAStep; }
+    if(QAStep==5 && QATime>=30){ ConsoleCommand(TEXT("csvprofile stop"),false); GoEntry(); ++QAStep; }
     if(QAStep==6 && QATime>=32)
     {
         FVector CameraLocation; FRotator CameraRotation;
@@ -544,7 +561,118 @@ void AMuseumController::RunMuseumQA(float DeltaTime)
         ++QAStep;
     }
     if(QAStep==7 && QATime>=35){ Shot(TEXT("Collection.png")); ++QAStep; }
-    if(QAStep==8 && QATime>=38)
+    if(QAStep==8 && QATime>=38){ GoAtrium(); QARotation=GetControlRotation(); ++QAStep; }
+    if(QAStep==9 && QATime>=42){ Shot(TEXT("Atrium_Wide.png")); ConsoleCommand(TEXT("csvprofile start"),false); ++QAStep; }
+    if(QATime>=42 && QATime<52)
+    {
+        FRotator Rotation=QARotation; Rotation.Yaw+=FMath::Sin((QATime-42)*.6f)*65;
+        SetControlRotation(Rotation); Right(FMath::Sin(QATime)*.1f);
+        QAMovingFrameTimes.Add(DeltaTime*1000);
+    }
+    if(QAStep==10 && QATime>=52)
+    {
+        ConsoleCommand(TEXT("csvprofile stop"),false);
+        GoAtrium();
+        Shot(TEXT("Atrium_Detail.png"));
+        FVector CameraLocation; FRotator CameraRotation; GetPlayerViewPoint(CameraLocation,CameraRotation);
+        for(TActorIterator<AActor> It(GetWorld());It;++It)
+        {
+            if(!It->ActorHasTag(TEXT("MuseumExhibit"))) continue;
+            FVector Center,Extent; It->GetActorBounds(false,Center,Extent); FHitResult Hit;
+            if(GetWorld()->LineTraceSingleByChannel(Hit,CameraLocation,Center,ECC_Visibility,FCollisionQueryParams(TEXT("AtriumPick"),true,GetPawn())) && Hit.GetActor()==*It)
+            { bQAAtriumPick=OpenExhibit(*It); if(bQAAtriumPick) break; }
+        }
+        ++QAStep;
+    }
+    if(QAStep==11 && QATime>=55){ Shot(TEXT("Atrium_Collection.png")); ++QAStep; }
+    if(QAStep==12 && QATime>=58)
+    {
+        GoGarden(); QARotation=GetControlRotation();
+        ConsoleCommand(TEXT("csvprofile start"),false); ++QAStep;
+    }
+    if(QATime>=58 && QATime<68)
+    {
+        FRotator Rotation=QARotation; Rotation.Yaw+=FMath::Sin((QATime-58)*.7f)*70;
+        SetControlRotation(Rotation); Right(FMath::Sin(QATime)*.15f);
+        QAMovingFrameTimes.Add(DeltaTime*1000);
+    }
+    if(QAStep==13 && QATime>=68)
+    {
+        ConsoleCommand(TEXT("csvprofile stop"),false);
+        CloseGallery();
+        GetPawn()->SetActorLocation(FVector(-275,2630,92),false,nullptr,ETeleportType::TeleportPhysics);
+        SetControlRotation(FRotator(4,180,0));
+        GetPawn()->SetActorRotation(FRotator(0,180,0));
+        Shot(TEXT("Outdoor_Photo_Wall.png")); ++QAStep;
+    }
+    if(QAStep==14 && QATime>=69)
+    {
+        bQAFullDecoded=false;
+        FVector CameraLocation; FRotator CameraRotation; GetPlayerViewPoint(CameraLocation,CameraRotation);
+        for(TActorIterator<AActor> It(GetWorld());It;++It)
+        {
+            if(!It->ActorHasTag(TEXT("MuseumOutdoorExhibit"))) continue;
+            FVector Center,Extent; It->GetActorBounds(false,Center,Extent); FHitResult Hit;
+            if(GetWorld()->LineTraceSingleByChannel(Hit,CameraLocation,Center,ECC_Visibility,FCollisionQueryParams(TEXT("OutdoorPick"),true,GetPawn())) && Hit.GetActor()==*It)
+            { bQAOutdoorPick=OpenExhibit(*It); if(bQAOutdoorPick) break; }
+        }
+        ++QAStep;
+    }
+    if(QAStep==15 && QATime>=72){ Shot(TEXT("Outdoor_Collection.png")); bQAOutdoorDecoded=bQAFullDecoded; ++QAStep; }
+    if(QAStep==16 && QATime>=75)
+    { TeleportToTag(TEXT("WallCorridorLeft")); QARotation=GetControlRotation(); ConsoleCommand(TEXT("csvprofile start"),false); ++QAStep; }
+    if((QATime>=75 && QATime<85) || (QATime>=91 && QATime<101))
+    {
+        FRotator Rotation=QARotation; Rotation.Yaw+=FMath::Sin(QATime*.65f)*35;
+        SetControlRotation(Rotation); Right(FMath::Sin(QATime)*.06f);
+        QAMovingFrameTimes.Add(DeltaTime*1000);
+    }
+    if(QAStep==17 && QATime>=85)
+    { ConsoleCommand(TEXT("csvprofile stop"),false); TeleportToTag(TEXT("WallCorridorLeft")); ++QAStep; }
+    if(QAStep==18 && QATime>=86){ Shot(TEXT("Left_Wall_Outside.png")); ++QAStep; }
+    auto PickWall=[this](const TCHAR* Face,const TCHAR* Opposite,bool& Occludes)
+    {
+        FVector CameraLocation; FRotator CameraRotation; GetPlayerViewPoint(CameraLocation,CameraRotation);
+        bool Picked=false, Blocked=true; int32 Behind=0;
+        for(TActorIterator<AActor> It(GetWorld());It;++It)
+        {
+            if(!It->ActorHasTag(Face) && !It->ActorHasTag(Opposite)) continue;
+            FVector Center,Extent; It->GetActorBounds(false,Center,Extent); FHitResult Hit;
+            bool HitSomething=GetWorld()->LineTraceSingleByChannel(Hit,CameraLocation,Center,ECC_Visibility,FCollisionQueryParams(TEXT("WallPick"),true,GetPawn()));
+            if(It->ActorHasTag(Opposite)) { ++Behind; if(!HitSomething || Hit.GetActor()==*It) Blocked=false; }
+            if(It->ActorHasTag(Face) && HitSomething && Hit.GetActor()==*It && !Picked) Picked=OpenExhibit(*It);
+        }
+        Occludes=Blocked && Behind==24; return Picked;
+    };
+    if(QAStep==19 && QATime>=87)
+    { bQAFullDecoded=false; bQALeftWallPick=PickWall(TEXT("WallFace=outward_left"),TEXT("WallFace=inward_left"),bQALeftWallOccludes); ++QAStep; }
+    if(QAStep==20 && QATime>=90)
+    { Shot(TEXT("Left_Wall_Collection.png")); bQALeftWallDecoded=bQAFullDecoded; ++QAStep; }
+    if(QAStep==21 && QATime>=91)
+    { TeleportToTag(TEXT("WallCorridorRight")); QARotation=GetControlRotation(); ConsoleCommand(TEXT("csvprofile start"),false); ++QAStep; }
+    if(QAStep==22 && QATime>=101)
+    { ConsoleCommand(TEXT("csvprofile stop"),false); TeleportToTag(TEXT("WallCorridorRight")); ++QAStep; }
+    if(QAStep==23 && QATime>=102){ Shot(TEXT("Right_Wall_Outside.png")); ++QAStep; }
+    if(QAStep==24 && QATime>=103)
+    { bQAFullDecoded=false; bQARightWallPick=PickWall(TEXT("WallFace=outward_right"),TEXT("WallFace=inward_right"),bQARightWallOccludes); ++QAStep; }
+    if(QAStep==25 && QATime>=106)
+    { Shot(TEXT("Right_Wall_Collection.png")); bQARightWallDecoded=bQAFullDecoded; ++QAStep; }
+    if(QAStep==26 && QATime>=109)
+    { TeleportToTag(TEXT("RearFacadeView")); ++QAStep; }
+    if(QAStep==27 && QATime>=111){ Shot(TEXT("Rear_Facade_Photos.png")); ++QAStep; }
+    if(QAStep==28 && QATime>=112)
+    { bool Blocked=false; bQAFullDecoded=false; bQARearPick=PickWall(TEXT("WallFace=rear_external"),TEXT("WallFace=rear_oak"),Blocked); ++QAStep; }
+    if(QAStep==29 && QATime>=115)
+    { Shot(TEXT("Rear_Facade_Collection.png")); bQARearDecoded=bQAFullDecoded; ++QAStep; }
+    if(QAStep==30 && QATime>=116){ TeleportToTag(TEXT("CourtyardBackView")); ++QAStep; }
+    if(QAStep==31 && QATime>=118){ Shot(TEXT("Courtyard_Back_Photos.png")); ++QAStep; }
+    if(QAStep==32 && QATime>=119)
+    { bool Blocked=false; bQAFullDecoded=false; bQACourtyardBackPick=PickWall(TEXT("WallFace=courtyard_back"),TEXT("UnusedQA"),Blocked); ++QAStep; }
+    if(QAStep==33 && QATime>=122)
+    { Shot(TEXT("Courtyard_Back_Collection.png")); bQACourtyardBackDecoded=bQAFullDecoded; ++QAStep; }
+    if(QAStep==34 && QATime>=123){ TeleportToTag(TEXT("CurtainFacadeView")); ++QAStep; }
+    if(QAStep==35 && QATime>=126){ Shot(TEXT("Full_Height_Glass_Facade.png")); ++QAStep; }
+    if(QAStep==36 && QATime>=129)
     {
         QAMovingFrameTimes.Sort();
         float Sum=0; for(float T:QAMovingFrameTimes) Sum+=T;
@@ -568,7 +696,28 @@ void AMuseumController::RunMuseumQA(float DeltaTime)
         int32 Count=0; for(const auto& A:Albums) Count+=A.Photos.Num();
         Report->SetNumberField(TEXT("photos"),Count);
         Report->SetBoolField(TEXT("ray_pick_opened_collection"),bQARayPick);
-        Report->SetBoolField(TEXT("full_photo_decoded"),CurrentPhoto!=nullptr);
+        Report->SetBoolField(TEXT("full_photo_decoded"),bQAFullDecoded);
+        Report->SetBoolField(TEXT("atrium_photo_opened_collection"),bQAAtriumPick);
+        Report->SetBoolField(TEXT("outdoor_photo_opened_collection"),bQAOutdoorPick);
+        Report->SetBoolField(TEXT("outdoor_full_photo_decoded"),bQAOutdoorDecoded);
+        Report->SetBoolField(TEXT("left_outward_photo_opened_collection"),bQALeftWallPick);
+        Report->SetBoolField(TEXT("right_outward_photo_opened_collection"),bQARightWallPick);
+        Report->SetBoolField(TEXT("left_outward_full_photo_decoded"),bQALeftWallDecoded);
+        Report->SetBoolField(TEXT("right_outward_full_photo_decoded"),bQARightWallDecoded);
+        Report->SetBoolField(TEXT("left_wall_blocks_inner_photos"),bQALeftWallOccludes);
+        Report->SetBoolField(TEXT("right_wall_blocks_inner_photos"),bQARightWallOccludes);
+        Report->SetBoolField(TEXT("rear_facade_opened_collection"),bQARearPick);
+        Report->SetBoolField(TEXT("rear_facade_full_photo_decoded"),bQARearDecoded);
+        Report->SetBoolField(TEXT("courtyard_back_opened_collection"),bQACourtyardBackPick);
+        Report->SetBoolField(TEXT("courtyard_back_full_photo_decoded"),bQACourtyardBackDecoded);
+        int32 OutdoorCount=0, IndoorCount=0;
+        for(TActorIterator<AActor> It(GetWorld());It;++It)
+            if(It->ActorHasTag(TEXT("MuseumExhibit")))
+            { if(It->ActorHasTag(TEXT("MuseumOutdoorExhibit"))) ++OutdoorCount; else ++IndoorCount; }
+        Report->SetNumberField(TEXT("outdoor_exhibits"),OutdoorCount);
+        Report->SetNumberField(TEXT("indoor_exhibits"),IndoorCount);
+        Report->SetBoolField(TEXT("performance_run_without_screenshots"),bQAPerf);
+        Report->SetStringField(TEXT("scene"),GetWorld()->GetMapName());
         Report->SetBoolField(TEXT("ray_tracing_supported"),GRHISupportsRayTracing);
         for(const TCHAR* Name:{TEXT("r.RayTracing"),TEXT("r.Lumen.HardwareRayTracing"),TEXT("r.ScreenPercentage"),TEXT("r.PathTracing")})
             if(auto* Variable=IConsoleManager::Get().FindConsoleVariable(Name)) Report->SetNumberField(Name,Variable->GetFloat());

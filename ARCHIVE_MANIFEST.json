@@ -2,13 +2,16 @@
   "skill": "local-photo-museum",
   "archive_date": "2026-10-09",
   "format": "public source skill archive",
-  "included": "instructions, references, original runtime source, configurable helper scripts, synthetic JSON examples",
-  "excluded": "personal media, real album metadata, screenshots, logs, binary game, engine, SDK, caches, Git history",
+  "included": "instructions, references, reusable runtime source, configurable helper scripts, synthetic JSON examples",
+  "excluded": "personal media, real album metadata, screenshots, logs, binary game, engine, SDK, caches",
   "checks": {
     "skill_frontmatter_valid": true,
     "portable_checks_passed": 4,
     "powershell_syntax_valid": true,
     "blender_synthetic_export_passed": true,
+    "warm_gallery_synthetic_export_passed": true,
+    "warm_gallery_closed_positive_volume_walls": 2,
+    "warm_gallery_synthetic_displays": 162,
     "source_blend_unchanged": true,
     "public_template_unreal_rebuild_performed": false,
     "known_private_pattern_scan": "passed"
@@ -36,8 +39,8 @@
     },
     {
       "path": "assets/unreal-runtime-template/Config/DefaultEngine.ini",
-      "bytes": 1103,
-      "sha256": "1d2cc454d82517ef7c67f30de58cfa2aaa0edd5f79db1611c449fd9f186f5c07"
+      "bytes": 1274,
+      "sha256": "3280cc22de514811806b889c3cfbe6266cddbf9176ec8fdd43d89afed5acbec8"
     },
     {
       "path": "assets/unreal-runtime-template/Config/DefaultGame.ini",
@@ -46,13 +49,13 @@
     },
     {
       "path": "assets/unreal-runtime-template/Config/DefaultGameUserSettings.ini",
-      "bytes": 544,
-      "sha256": "b0c11de77ff4ae5ef46c1ee08ddffbded96f06a5390df02d885c7ec9c9ad36eb"
+      "bytes": 540,
+      "sha256": "2379c57474790d7ffaa0004e36a864ba4770618ca9c82b95f3a3c33acfdba001"
     },
     {
       "path": "assets/unreal-runtime-template/Config/DefaultInput.ini",
-      "bytes": 10841,
-      "sha256": "5b142751af11eb288802c719f37530a6da379a55bc8e6abc3b88c55125be4652"
+      "bytes": 10935,
+      "sha256": "3830cde3560f0657d2e735221140fe0eb608a2f5978333903320267f74c3e8d1"
     },
     {
       "path": "assets/unreal-runtime-template/MomentMuseum.uproject",
@@ -71,13 +74,13 @@
     },
     {
       "path": "assets/unreal-runtime-template/Source/MomentMuseum/MuseumRuntime.cpp",
-      "bytes": 28762,
-      "sha256": "196b48cf14bae5d6713d1ef37f9b306a594b44c509a02e5c3801f4202e291c79"
+      "bytes": 38423,
+      "sha256": "8efeb47641c6b8ea973ab26a740fd38cbcb54bafa9ede6cfd36c3cd73c865cb8"
     },
     {
       "path": "assets/unreal-runtime-template/Source/MomentMuseum/MuseumRuntime.h",
-      "bytes": 2681,
-      "sha256": "9a3384e7588b374bd569d926a29d95dff6526e24795362648d9256fae71fb2f4"
+      "bytes": 3183,
+      "sha256": "3e7c0f2c7e3c51ff5a772eb8b9e191646849117ca3e341773a7608168097f8c9"
     },
     {
       "path": "assets/unreal-runtime-template/Source/MomentMuseum.Target.cs",
@@ -101,8 +104,13 @@
     },
     {
       "path": "README.md",
-      "bytes": 3172,
-      "sha256": "6e55effcd52f0924e10c15ccc307ef8776e69eadff7651d46313143b285f789e"
+      "bytes": 4123,
+      "sha256": "cd2e23e2dbfcf11015b70002bfc5fd59d43cd556519acfac975b22e7c413b8be"
+    },
+    {
+      "path": "references/authored-gallery.md",
+      "bytes": 5155,
+      "sha256": "f137195c34277918500ce5f40c16ad32199e174c6a6d4acbf32dc51898783c8a"
     },
     {
       "path": "references/scene-and-assets.md",
@@ -111,13 +119,18 @@
     },
     {
       "path": "references/unreal-workflow.md",
-      "bytes": 3985,
-      "sha256": "d129c6808f741a2696273826e817c0c63200da69d1843954ccf54bec2491c825"
+      "bytes": 4448,
+      "sha256": "fb4bfc423921ee7942f2cb6a1d2e68e9f72fb0708e140356ed2682465445837c"
     },
     {
       "path": "references/validation-and-troubleshooting.md",
-      "bytes": 4746,
-      "sha256": "46693f5d0bebfe4b5bb925d155e735a189214bf77966deb9043d1af65aebd740"
+      "bytes": 5776,
+      "sha256": "b1cbca1591c53297a8bced262c6bdee3620cb206a52b76430f47242315e9ce7e"
+    },
+    {
+      "path": "scripts/author_warm_gallery.py",
+      "bytes": 9863,
+      "sha256": "21d6a6ec664df79d123f4cd519a435282fa605e7e53107060c64f7b17ea7477b"
     },
     {
       "path": "scripts/build_museum.ps1",
@@ -141,13 +154,13 @@
     },
     {
       "path": "scripts/self_check.py",
-      "bytes": 3588,
-      "sha256": "b5429ef5214c3d087813c09d966e2c43fea6861e99eac38a59072312b19d0c18"
+      "bytes": 3849,
+      "sha256": "0231b31d65d671327733941cfbc21d7a9c03be86782e9e0c25d638bf49adb3dd"
     },
     {
       "path": "scripts/summarize_csv.py",
-      "bytes": 1279,
-      "sha256": "8302365a19c3edb630f315e67814e2a36290542eff10e2b6ea7ecbfaccbb82bd"
+      "bytes": 1522,
+      "sha256": "4a7ba13da6f17cb6d55e8c3e69a781a0ff19a4c83f6dcdbdecfb1748f1f76acf"
     },
     {
       "path": "scripts/verify_catalogue.py",
@@ -156,8 +169,8 @@
     },
     {
       "path": "SKILL.md",
-      "bytes": 4733,
-      "sha256": "62d6d8286588d55718336a4f181b03cfef39129233d502525f802f39d5926be2"
+      "bytes": 5090,
+      "sha256": "471586c39f525f6ffa290b8a6ab97fe57bdf696af84c4dfe12b68deda63a60de"
     }
   ]
 }

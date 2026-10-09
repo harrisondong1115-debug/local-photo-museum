@@ -31,16 +31,17 @@ WorkingMuseum/
 
 C++ 包含 Character、Controller、Slate 输入面和相册 UI。Actor 标签：
 
-- `MuseumEntry`：入口 PlayerStart；`MuseumGarden`：庭院 TargetPoint。
+- `MuseumEntry`：入口 PlayerStart；`MuseumGarden`：庭院 TargetPoint；`MuseumAtriumView`：中庭观景点（M）。
+- 完整迭代 QA 还使用 `WallCorridorLeft`、`WallCorridorRight`、`RearFacadeView`、`CourtyardBackView`、`CurtainFacadeView`，以及 `MuseumOutdoorExhibit` 和 `WallFace=<face>`。见暖调展馆参考；基础导入器不自动生成这些路线点。
 - `MuseumGenerated`：生成物；`MuseumExhibit`、`Album=<id>`、`Photo=<id>`：可点击展品。
 
 照片加载在后台线程解码，Generation 防止快速翻页时旧请求覆盖新图；只保留当前高清纹理。合集目录在打包时作为 NonUFS 文件暂存；仅有导入贴图而缺少 Collections 原 JPEG 时，场景能显示但合集不能完整工作。
 
-操作为 WASD、Shift、鼠标拖动、点击照片、Tab 全部合集、Home 入口、O 庭院、Esc 返回、左右箭头翻页、F8 画质、F9 帧率。拖动方向是模板默认值；新项目以用户要求为准。
+操作为 WASD、Shift、鼠标拖动、点击照片、Tab 全部合集、Home 入口、O 庭院、M 中庭、Esc 返回、左右箭头翻页、F8 画质、F9 帧率。拖动方向是模板默认值；新项目以用户要求为准。
 
 ## 渲染起点
 
-配置采用 DX12、SM6、Lumen GI/反射、硬件光追、TSR，关闭 Path Tracing 与运动模糊。流畅/画质档的 ScreenPercentage 起点分别约66.7/83.3，GI/反射档分别2/3，默认60 FPS上限；需要按目标硬件调节。
+配置采用 DX12、SM6、Lumen GI/反射、硬件光追、TSR，关闭 Path Tracing 与运动模糊。流畅/画质档的 ScreenPercentage 起点分别为75/100，GI/反射档分别2/3，默认75 FPS上限；需要按目标硬件调节。AA 档 2 配合 TSR history 100% 避免增加历史缓冲分辨率。不要只加渲染比例而忽略历史缓冲、GI、反射与真实 GPUTime。
 
 导入材质将照片设为非镜面纸面，木材等使用独立粗糙度/法线；纹理逐个保存，避免批量保存造成瞬时内存峰值。非二次幂照片可用适当 power-of-two 策略建立 mip 与压缩，但几何比例仍按原照片保留。
 
