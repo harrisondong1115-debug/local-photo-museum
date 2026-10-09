@@ -1,0 +1,16 @@
+{
+  "version": 5,
+  "albums": [
+    {
+      "id": "sample",
+      "title": "Example Collection",
+      "photos": [
+        {
+          "id": "sample_01",
+          "name": "Example Image",
+          "hires_file": "Photos/sample_01.jpg"
+        }
+      ]
+    }
+  ]
+}

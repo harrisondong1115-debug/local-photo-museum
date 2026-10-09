@@ -1,0 +1,163 @@
+{
+  "skill": "local-photo-museum",
+  "archive_date": "2026-10-09",
+  "format": "public source skill archive",
+  "included": "instructions, references, original runtime source, configurable helper scripts, synthetic JSON examples",
+  "excluded": "personal media, real album metadata, screenshots, logs, binary game, engine, SDK, caches, Git history",
+  "checks": {
+    "skill_frontmatter_valid": true,
+    "portable_checks_passed": 4,
+    "powershell_syntax_valid": true,
+    "blender_synthetic_export_passed": true,
+    "source_blend_unchanged": true,
+    "public_template_unreal_rebuild_performed": false,
+    "known_private_pattern_scan": "passed"
+  },
+  "files": [
+    {
+      "path": ".gitignore",
+      "bytes": 431,
+      "sha256": "bf93aa162ce9a8899ed6dde5ce553b9b1bd566962efc85af63b5f7f9a99e8804"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "bytes": 238,
+      "sha256": "0f4d8a422311675e33e9b24d14d88883481d2f128533293613a6941aa8e272bd"
+    },
+    {
+      "path": "assets/catalogue.example.json",
+      "bytes": 282,
+      "sha256": "fe4cfdfe26478ec19dba2375c802fbd286fceb1d20a4bb0cd2d785a7c06a3d27"
+    },
+    {
+      "path": "assets/scene_settings.example.json",
+      "bytes": 447,
+      "sha256": "1806451c7fed9f0c968a77b124fb679a6116bb1f118cab85029b375a30123507"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Config/DefaultEngine.ini",
+      "bytes": 1103,
+      "sha256": "1d2cc454d82517ef7c67f30de58cfa2aaa0edd5f79db1611c449fd9f186f5c07"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Config/DefaultGame.ini",
+      "bytes": 416,
+      "sha256": "a90abacff67e053b85906a9cbae8884b94308afb43d842540c8775271e0572c8"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Config/DefaultGameUserSettings.ini",
+      "bytes": 544,
+      "sha256": "b0c11de77ff4ae5ef46c1ee08ddffbded96f06a5390df02d885c7ec9c9ad36eb"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Config/DefaultInput.ini",
+      "bytes": 10841,
+      "sha256": "5b142751af11eb288802c719f37530a6da379a55bc8e6abc3b88c55125be4652"
+    },
+    {
+      "path": "assets/unreal-runtime-template/MomentMuseum.uproject",
+      "bytes": 394,
+      "sha256": "b4801e4d1b00c36cb58bfcfb3eb1bc6250bc31644921733549ebb58f872fe7c5"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Source/MomentMuseum/MomentMuseum.Build.cs",
+      "bytes": 428,
+      "sha256": "7599a7ab86708913dd43788c54e404995d858e81ef2212ab186af5bf9645291a"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Source/MomentMuseum/MomentMuseum.cpp",
+      "bytes": 120,
+      "sha256": "b1f76073d62cd4cab641e68e320e984b615caef27c87962e3a97dbeaa9be0474"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Source/MomentMuseum/MuseumRuntime.cpp",
+      "bytes": 28762,
+      "sha256": "196b48cf14bae5d6713d1ef37f9b306a594b44c509a02e5c3801f4202e291c79"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Source/MomentMuseum/MuseumRuntime.h",
+      "bytes": 2681,
+      "sha256": "9a3384e7588b374bd569d926a29d95dff6526e24795362648d9256fae71fb2f4"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Source/MomentMuseum.Target.cs",
+      "bytes": 351,
+      "sha256": "5ba0aa83c39d25ae181568cc6d306d2976b55dc4830e286e4ff59555f2e310bd"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Source/MomentMuseumEditor.Target.cs",
+      "bytes": 365,
+      "sha256": "9c433ce241ef1bd8bcdbf828c82e42531ea15d4b02df98f6871d027c48243574"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Tools/import_museum.py",
+      "bytes": 21492,
+      "sha256": "cc79b7014d647e23a0a4ccb5f6c3c2242d0a4cde8c92a0e207a71ae9c0c6b7b3"
+    },
+    {
+      "path": "assets/unreal-runtime-template/Tools/panorama_projection.py",
+      "bytes": 2866,
+      "sha256": "f9e55228e5d73928c08ed4622104288c45309a878d38d700d94d1fffa8d06e0b"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3172,
+      "sha256": "6e55effcd52f0924e10c15ccc307ef8776e69eadff7651d46313143b285f789e"
+    },
+    {
+      "path": "references/scene-and-assets.md",
+      "bytes": 4391,
+      "sha256": "e775ea149b6eb4b33627419146b4d5f1f90d34499cf00454765aac475f7cef82"
+    },
+    {
+      "path": "references/unreal-workflow.md",
+      "bytes": 3985,
+      "sha256": "d129c6808f741a2696273826e817c0c63200da69d1843954ccf54bec2491c825"
+    },
+    {
+      "path": "references/validation-and-troubleshooting.md",
+      "bytes": 4746,
+      "sha256": "46693f5d0bebfe4b5bb925d155e735a189214bf77966deb9043d1af65aebd740"
+    },
+    {
+      "path": "scripts/build_museum.ps1",
+      "bytes": 3020,
+      "sha256": "7340fe0b1178f8690b4a595ebbfb8265c0b535252cb9cfff2e604c0166dee2e2"
+    },
+    {
+      "path": "scripts/export_blender_scene.py",
+      "bytes": 9356,
+      "sha256": "8ed473a629ee5936b0f3ada44f88fb99888ae7e373ed8290301b137e48c6eb7a"
+    },
+    {
+      "path": "scripts/panorama_sun.py",
+      "bytes": 2866,
+      "sha256": "f9e55228e5d73928c08ed4622104288c45309a878d38d700d94d1fffa8d06e0b"
+    },
+    {
+      "path": "scripts/prepare_collections.py",
+      "bytes": 2812,
+      "sha256": "54ed64584fe091836901f67c041c93fd3577c02cac1048ccc563215888de3ee2"
+    },
+    {
+      "path": "scripts/self_check.py",
+      "bytes": 3588,
+      "sha256": "b5429ef5214c3d087813c09d966e2c43fea6861e99eac38a59072312b19d0c18"
+    },
+    {
+      "path": "scripts/summarize_csv.py",
+      "bytes": 1279,
+      "sha256": "8302365a19c3edb630f315e67814e2a36290542eff10e2b6ea7ecbfaccbb82bd"
+    },
+    {
+      "path": "scripts/verify_catalogue.py",
+      "bytes": 2639,
+      "sha256": "397069975f9d52c221fd0002904b9fa5ec1adb7dee48555e368225721e9905d3"
+    },
+    {
+      "path": "SKILL.md",
+      "bytes": 4733,
+      "sha256": "62d6d8286588d55718336a4f181b03cfef39129233d502525f802f39d5926be2"
+    }
+  ]
+}

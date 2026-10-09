@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local Photo Museum"
+  short_description: "Build local photo museums with Blender and Unreal"
+  default_prompt: "Use $local-photo-museum to build a local walkable museum from my approved photo collections."
